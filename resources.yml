@@ -137,50 +137,51 @@ Resources:
             method.response.header.Content-Disposition: false
             method.response.header.Content-Type: false
 
-  # SpaServerDomainName:
-  #   Type: AWS::ApiGateway::DomainName
-  #   Properties:
-  #     DomainName: ${self:custom.dns.endpoint}
-  #     RegionalCertificateArn: ${self:custom.apig.acmCertificateArn}
-  #     EndpointConfiguration:
-  #       Types:
-  #         - REGIONAL
-  # SpaServerBasePathMapping:
-  #   DependsOn:
-  #     - SpaServer
-  #     - ApiGatewayDeployment1017 # TODO
-  #     - SpaServerDomainName
-  #   Type: AWS::ApiGateway::BasePathMapping
-  #   Properties:
-  #     DomainName:
-  #       Ref: SpaServerDomainName
-  #     RestApiId:
-  #       Ref: SpaServer
-  #     Stage: ${opt:stage}
-  # SpaServerEndpointRecord:
-  #   DependsOn:
-  #     - SpaServerDomainName
-  #   Type: AWS::Route53::RecordSet
-  #   Properties:
-  #     HostedZoneId: ${self:custom.dns.hostedZoneId}
-  #     Name:
-  #       Fn::Join:
-  #         - ''
-  #         - - Ref: SpaServerDomainName
-  #           - .
-  #     # Region: ${opt:region}
-  #     # SetIdentifier: ${opt:region}
-  #     # HealthCheckId: ${self:custom.dns.${opt:region}.healthCheckId}
-  #     Type: A
-  #     AliasTarget:
-  #       HostedZoneId:
-  #         Fn::GetAtt:
-  #           - SpaServerDomainName
-  #           - RegionalHostedZoneId
-  #       DNSName:
-  #         Fn::GetAtt:
-  #           - SpaServerDomainName
-  #           - RegionalDomainName
+  SpaServerDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: ${self:custom.dns.endpoint}
+      RegionalCertificateArn: ${self:custom.dns.acmCertificateArn}
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  SpaServerBasePathMapping:
+    DependsOn:
+      - SpaServer
+      - ApiGatewayDeployment
+      - SpaServerDomainName
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName:
+        Ref: SpaServerDomainName
+      RestApiId:
+        Ref: SpaServer
+      Stage: ${opt:stage}
+  
+  SpaServerEndpointRecord:
+    DependsOn:
+      - SpaServerDomainName
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: ${self:custom.dns.hostedZoneId}
+      Name:
+        Fn::Join:
+          - ''
+          - - Ref: SpaServerDomainName
+            - .
+      # Region: ${opt:region}
+      # SetIdentifier: ${opt:region}
+      # HealthCheckId: ${self:custom.dns.${opt:region}.healthCheckId}
+      Type: A
+      AliasTarget:
+        HostedZoneId:
+          Fn::GetAtt:
+            - SpaServerDomainName
+            - RegionalHostedZoneId
+        DNSName:
+          Fn::GetAtt:
+            - SpaServerDomainName
+            - RegionalDomainName
 
   ApiGatewayDeployment: # ${sls:instanceId}
     DependsOn:
@@ -192,19 +193,6 @@ Resources:
       RestApiId:
         Ref: SpaServer
       StageName: ${opt:stage}
-
-  # SpaEndpointRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Properties:
-  #     HostedZoneId: ${self:custom.apig.hostedZoneId}
-  #     Name: ${self:custom.apig.endpoint}.
-  #     Type: A
-  #     AliasTarget:
-  #       HostedZoneId: Z2FDTNDATAQYW2 # TODO
-  #       DNSName:
-  #         Fn::GetAtt:
-  #           - SpaDistribution
-  #           - DomainName
 
 Outputs:
   SpaBucketName:
@@ -218,5 +206,5 @@ Outputs:
   # TODO apig endpoint
   # https://SpaServerId.execute-api.us-east-1.amazonaws.com/test
 
-  # SpaURL:
-  #   Value: https://${self:custom.apig.endpoint}
+  SpaURL:
+    Value: https://${self:custom.dns.endpoint}

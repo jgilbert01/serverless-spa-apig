@@ -94,6 +94,7 @@ class Plugin {
     const instanceId = this.serverless.instanceId;
     const ApiGatewayDeployment = resources.ApiGatewayDeployment;
     delete resources.ApiGatewayDeployment;
+    resources.SpaServerBasePathMapping.DependsOn[1] = `ApiGatewayDeployment${instanceId}`;
     resources[`ApiGatewayDeployment${instanceId}`] = ApiGatewayDeployment;
   }
 
