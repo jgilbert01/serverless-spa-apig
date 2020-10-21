@@ -1,0 +1,222 @@
+---
+Resources:
+  SpaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+
+  APIGatewayAWSProxyExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ${self:service}-${opt:stage}-spa-s3-proxy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ${self:service}-${opt:stage}-spa-bucket-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:Get*'
+                  - 's3:List*'
+                Resource:
+                  - Fn::GetAtt: [ SpaBucket, Arn ]
+                  - Fn::Join:
+                      - '/'
+                      - - Fn::GetAtt: [ SpaBucket, Arn ]
+                        - '*'
+
+  SpaServer:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: ${self:service}-${opt:stage}
+      MinimumCompressionSize: 0
+      EndpointConfiguration:
+        Types: [ REGIONAL ]
+      BinaryMediaTypes:
+        - '*/*'
+
+  SpaServerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt: [ SpaServer, RootResourceId ]
+      RestApiId:
+        Ref: SpaServer
+      PathPart: '{proxy+}'
+
+  SpaServerRootMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId:
+        Fn::GetAtt: [ SpaServer, RootResourceId ]
+      RestApiId:
+        Ref: SpaServer
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.header.Cache-Control: false
+        method.request.header.Content-Disposition: false
+        method.request.header.Content-Type: false
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS
+        Credentials:
+          Fn::GetAtt: [ APIGatewayAWSProxyExecRole, Arn ]
+        Uri:
+          Fn::Join:
+            - '/'
+            - - 'arn:aws:apigateway:${opt:region}:s3:path'
+              - Ref: SpaBucket
+              - 'index.html'
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestParameters:
+          integration.request.header.Cache-Control: method.request.header.Cache-Control
+          integration.request.header.Content-Disposition: method.request.header.Content-Disposition
+          integration.request.header.Content-Type: method.request.header.Content-Type
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Cache-Control: integration.response.header.Cache-Control
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+              method.response.header.Content-Type: integration.response.header.Content-Type
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Cache-Control: false
+            method.response.header.Content-Disposition: false
+            method.response.header.Content-Type: false
+
+  SpaServerProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: GET
+      ResourceId:
+        Ref: SpaServerResource
+      RestApiId:
+        Ref: SpaServer
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.proxy: true
+        method.request.header.Cache-Control: false
+        method.request.header.Content-Disposition: false
+        method.request.header.Content-Type: false
+      Integration:
+        Credentials:
+          Fn::GetAtt: [ APIGatewayAWSProxyExecRole, Arn ]
+        RequestParameters:
+          integration.request.path.proxy: method.request.path.proxy
+          integration.request.header.Cache-Control: method.request.header.Cache-Control
+          integration.request.header.Content-Disposition: method.request.header.Content-Disposition
+          integration.request.header.Content-Type: method.request.header.Content-Type
+        IntegrationHttpMethod: GET
+        Type: AWS
+        Uri:
+          Fn::Join:
+            - '/'
+            - - 'arn:aws:apigateway:${opt:region}:s3:path'
+              - Ref: SpaBucket
+              - '{proxy}'
+        PassthroughBehavior: WHEN_NO_MATCH
+        ContentHandling: CONVERT_TO_BINARY
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Cache-Control: integration.response.header.Cache-Control
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+              method.response.header.Content-Type: integration.response.header.Content-Type
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Cache-Control: false
+            method.response.header.Content-Disposition: false
+            method.response.header.Content-Type: false
+
+  # SpaServerDomainName:
+  #   Type: AWS::ApiGateway::DomainName
+  #   Properties:
+  #     DomainName: ${self:custom.dns.endpoint}
+  #     RegionalCertificateArn: ${self:custom.apig.acmCertificateArn}
+  #     EndpointConfiguration:
+  #       Types:
+  #         - REGIONAL
+  # SpaServerBasePathMapping:
+  #   DependsOn:
+  #     - SpaServer
+  #     - ApiGatewayDeployment1017 # TODO
+  #     - SpaServerDomainName
+  #   Type: AWS::ApiGateway::BasePathMapping
+  #   Properties:
+  #     DomainName:
+  #       Ref: SpaServerDomainName
+  #     RestApiId:
+  #       Ref: SpaServer
+  #     Stage: ${opt:stage}
+  # SpaServerEndpointRecord:
+  #   DependsOn:
+  #     - SpaServerDomainName
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     HostedZoneId: ${self:custom.dns.hostedZoneId}
+  #     Name:
+  #       Fn::Join:
+  #         - ''
+  #         - - Ref: SpaServerDomainName
+  #           - .
+  #     # Region: ${opt:region}
+  #     # SetIdentifier: ${opt:region}
+  #     # HealthCheckId: ${self:custom.dns.${opt:region}.healthCheckId}
+  #     Type: A
+  #     AliasTarget:
+  #       HostedZoneId:
+  #         Fn::GetAtt:
+  #           - SpaServerDomainName
+  #           - RegionalHostedZoneId
+  #       DNSName:
+  #         Fn::GetAtt:
+  #           - SpaServerDomainName
+  #           - RegionalDomainName
+
+  ApiGatewayDeployment: # ${sls:instanceId}
+    DependsOn:
+      - SpaServer
+      - SpaServerRootMethod
+      - SpaServerProxyMethod
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: SpaServer
+      StageName: ${opt:stage}
+
+  # SpaEndpointRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     HostedZoneId: ${self:custom.apig.hostedZoneId}
+  #     Name: ${self:custom.apig.endpoint}.
+  #     Type: A
+  #     AliasTarget:
+  #       HostedZoneId: Z2FDTNDATAQYW2 # TODO
+  #       DNSName:
+  #         Fn::GetAtt:
+  #           - SpaDistribution
+  #           - DomainName
+
+Outputs:
+  SpaBucketName:
+    Value:
+      Ref: SpaBucket
+
+  SpaServerId:
+    Value:
+      Ref: SpaServer
+
+  # TODO apig endpoint
+  # https://SpaServerId.execute-api.us-east-1.amazonaws.com/test
+
+  # SpaURL:
+  #   Value: https://${self:custom.apig.endpoint}
