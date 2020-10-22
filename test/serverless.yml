@@ -20,6 +20,10 @@ custom:
         globs: 'index.html'
         headers:
           CacheControl: max-age=300 # 5 minutes
-  apig:
+  # apig: false
   dns:
-    endpoint: x
+    hostedZoneId: ZZZZZZZZZZZZZZZZZZZZ
+    domainName: example.com
+    endpoint: app.${self:custom.dns.domainName}
+    acmCertificateArn: arn:aws:acm:us-east-1:0123456789:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+

@@ -13,6 +13,13 @@ class Plugin {
   }
 
   beforeCreateDeploymentArtifacts() {
+    if (this.serverless.service.custom.apig === undefined) {
+      this.serverless.service.custom.apig = true;
+    }
+
+    const enabled = this.serverless.service.custom.apig;
+    if (enabled === false) return;
+
     const baseResources = this.serverless.service.provider.compiledCloudFormationTemplate;
 
     // console.log(this.serverless);
@@ -32,61 +39,19 @@ class Plugin {
   }
 
   prepareResources(resources) {
-    if (!this.serverless.service.custom.apig) {
-      this.serverless.service.custom.apig = {};
-    }
     if (!this.serverless.service.custom.dns) {
       this.serverless.service.custom.dns = {};
     }
 
-    // everything except buckets
-    const disabled = this.serverless.service.custom.apig.disabled;
-    const enabled = this.serverless.service.custom.apig.enabled;
-    if ((disabled === undefined && enabled === undefined) || (disabled != undefined && !disabled) || (enabled != undefined && enabled.includes(this.options.stage))) {
-      // TODO
-      // this.prepareCertificate(distributionConfig, redirectDistributionConfig);
-      // this.prepareWaf(distributionConfig, redirectDistributionConfig);
-
-      console.log(this.serverless.instanceId);
-      this.prepareDeployment(resources.Resources);
-
-      // TODO
-      // this.prepareSpaEndpointRecord(resources);
-    } else {
-      // delete resources.Resources.SpaEndpointRecord;
-      // delete resources.Outputs.SpaURL;
-    }
+    this.prepareDeployment(resources.Resources);
+    // this.prepareWaf(resources);
   }
 
-  // prepareCertificate(distributionConfig, redirectDistributionConfig) {
-  //   const acmCertificateArn = this.serverless.service.custom.apig.acmCertificateArn;
-  //   if (acmCertificateArn) {
-  //     distributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
-  //     redirectDistributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
-
-  //     const minimumProtocolVersion = this.serverless.service.custom.apig.minimumProtocolVersion;
-  //     if (minimumProtocolVersion) {
-  //       distributionConfig.ViewerCertificate.MinimumProtocolVersion = minimumProtocolVersion;
-  //       redirectDistributionConfig.ViewerCertificate.MinimumProtocolVersion = minimumProtocolVersion;
-  //     }
-
-  //     distributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
-  //     redirectDistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
-  //   } else {
-  //     delete distributionConfig.ViewerCertificate;
-  //     delete redirectDistributionConfig.ViewerCertificate;
-  //   }
-  // }
-
-  // prepareWaf(distributionConfig, redirectDistributionConfig) {
+  // prepareWaf(resources) {
   //   const webACLId = this.serverless.service.custom.apig.webACLId;
 
-  //   if (webACLId) {
-  //     distributionConfig.WebACLId = webACLId;
-  //     redirectDistributionConfig.WebACLId = webACLId;
-  //   } else {
-  //     delete distributionConfig.WebACLId;
-  //     delete redirectDistributionConfig.WebACLId;
+  //   if (!webACLId) {
+  //     delete resources.SpaServerWebACLAssociation;
   //   }
   // }
 
@@ -97,39 +62,6 @@ class Plugin {
     resources.SpaServerBasePathMapping.DependsOn[1] = `ApiGatewayDeployment${instanceId}`;
     resources[`ApiGatewayDeployment${instanceId}`] = ApiGatewayDeployment;
   }
-
-  // prepareSpaEndpointRecord(resources) {
-  //   const hostedZoneId = this.serverless.service.custom.dns.hostedZoneId;
-  //   if (hostedZoneId) {
-  //     const properties = resources.Resources.SpaEndpointRecord.Properties;
-  //     const redirectProperties = resources.Resources.RedirectEndpointRecord.Properties;
-
-  //     properties.HostedZoneId = hostedZoneId;
-  //     redirectProperties.HostedZoneId = hostedZoneId;
-
-  //     const endpoint = this.serverless.service.custom.dns.endpoint;
-  //     if (endpoint) {
-  //       properties.Name = `${endpoint}.`;
-
-  //       const protocol = this.serverless.service.custom.apig.acmCertificateArn ? 'https' : 'http';
-  //       resources.Outputs.SpaURL.Value = `${protocol}://${endpoint}`;
-  //     } else {
-  //       delete resources.Resources.SpaEndpointRecord;
-  //       delete resources.Outputs.SpaURL;
-  //     }
-
-  //     const domainName = this.serverless.service.custom.dns.domainName;
-  //     if (domainName) {
-  //       redirectProperties.Name = `${domainName}.`;
-  //     } else {
-  //       delete resources.Resources.RedirectEndpointRecord;
-  //     }
-
-  //   } else {
-  //     delete resources.Resources.SpaEndpointRecord;
-  //     delete resources.Outputs.SpaURL;
-  //   }
-  // }
 }
 
 module.exports = Plugin;

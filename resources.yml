@@ -138,14 +138,17 @@ Resources:
             method.response.header.Content-Type: false
 
   SpaServerDomainName:
+    Condition: IncludeDns
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: ${self:custom.dns.endpoint}
-      RegionalCertificateArn: ${self:custom.dns.acmCertificateArn}
+      DomainName: ${self:custom.dns.endpoint, 'undefined'}
+      RegionalCertificateArn: ${self:custom.dns.acmCertificateArn, 'undefined'}
+      SecurityPolicy: TLS_1_2
       EndpointConfiguration:
         Types:
           - REGIONAL
   SpaServerBasePathMapping:
+    Condition: IncludeDns
     DependsOn:
       - SpaServer
       - ApiGatewayDeployment
@@ -157,13 +160,14 @@ Resources:
       RestApiId:
         Ref: SpaServer
       Stage: ${opt:stage}
-  
+
   SpaServerEndpointRecord:
+    Condition: IncludeDns
     DependsOn:
       - SpaServerDomainName
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneId: ${self:custom.dns.hostedZoneId}
+      HostedZoneId: ${self:custom.dns.hostedZoneId, 'undefined'}
       Name:
         Fn::Join:
           - ''
@@ -207,4 +211,12 @@ Outputs:
   # https://SpaServerId.execute-api.us-east-1.amazonaws.com/test
 
   SpaURL:
-    Value: https://${self:custom.dns.endpoint}
+    Condition: IncludeDns
+    Value: https://${self:custom.dns.endpoint, 'undefined'}
+
+Conditions:
+  IncludeDns:
+    Fn::Not:
+      - Fn::Equals:
+        - ${self:custom.dns.endpoint, 'undefined'}
+        - false
