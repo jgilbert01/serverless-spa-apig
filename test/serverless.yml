@@ -20,7 +20,8 @@ custom:
         globs: 'index.html'
         headers:
           CacheControl: max-age=300 # 5 minutes
-  # apig: false
+  # apig: # false
+  #   webACLId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   dns:
     hostedZoneId: ZZZZZZZZZZZZZZZZZZZZ
     domainName: example.com

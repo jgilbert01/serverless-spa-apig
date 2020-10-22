@@ -44,23 +44,26 @@ class Plugin {
     }
 
     this.prepareDeployment(resources.Resources);
-    // this.prepareWaf(resources);
+    this.prepareWaf(resources.Resources);
   }
 
-  // prepareWaf(resources) {
-  //   const webACLId = this.serverless.service.custom.apig.webACLId;
+  prepareWaf(resources) {
+    const webACLId = this.serverless.service.custom.apig.webACLId;
+    const instanceId = this.serverless.instanceId;
 
-  //   if (!webACLId) {
-  //     delete resources.SpaServerWebACLAssociation;
-  //   }
-  // }
+    if (webACLId) {
+      resources.SpaServerWebACLAssociation.Properties.ResourceArn.Ref = `SpaServerDeployment${instanceId}`;
+    } else {
+      delete resources.SpaServerWebACLAssociation;
+    }
+  }
 
   prepareDeployment(resources) {
     const instanceId = this.serverless.instanceId;
-    const ApiGatewayDeployment = resources.ApiGatewayDeployment;
-    delete resources.ApiGatewayDeployment;
-    resources.SpaServerBasePathMapping.DependsOn[1] = `ApiGatewayDeployment${instanceId}`;
-    resources[`ApiGatewayDeployment${instanceId}`] = ApiGatewayDeployment;
+    const SpaServerDeployment = resources.SpaServerDeployment;
+    delete resources.SpaServerDeployment;
+    resources.SpaServerBasePathMapping.DependsOn[1] = `SpaServerDeployment${instanceId}`;
+    resources[`SpaServerDeployment${instanceId}`] = SpaServerDeployment;
   }
 }
 

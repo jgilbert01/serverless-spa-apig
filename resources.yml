@@ -137,6 +137,13 @@ Resources:
             method.response.header.Content-Disposition: false
             method.response.header.Content-Type: false
 
+  SpaServerWebACLAssociation:
+    Type: AWS::WAFRegional::WebACLAssociation
+    Properties:
+      ResourceArn:
+        Ref: SpaServerDeployment
+      WebACLId: ${self:custom.apig.webACLId, 'undefined'}
+
   SpaServerDomainName:
     Condition: IncludeDns
     Type: AWS::ApiGateway::DomainName
@@ -187,7 +194,7 @@ Resources:
             - SpaServerDomainName
             - RegionalDomainName
 
-  ApiGatewayDeployment: # ${sls:instanceId}
+  SpaServerDeployment: # ${sls:instanceId}
     DependsOn:
       - SpaServer
       - SpaServerRootMethod

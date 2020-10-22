@@ -23,7 +23,8 @@ custom:
   spa:
     files: # per serverless-spa-deploy
       ...
-  # apig: false
+  # apig: # false
+  #   webACLId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   dns: # false
     hostedZoneId: ZZZZZZZZZZZZZZZZZZZZ
     domainName: example.com
