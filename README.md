@@ -33,3 +33,4 @@ custom:
     endpoint: app.${self:custom.dns.domainName}
     acmCertificateArn: arn:aws:acm:us-east-1:0123456789:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
+> Specify (domainName, hostedZoneId, endpoint and acmCertificateArn) or (domainName and basePath)
