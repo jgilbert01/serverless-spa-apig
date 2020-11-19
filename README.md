@@ -6,7 +6,7 @@ This approach is useful when CloudFront is not permitted. It sets up API Gateway
 
 * Creates S3 bucket
 * Creates API Gateway _(unless apig:false)_
-* Creates Route 53 RecordSet _(unless dns:false)_
+* Creates Route 53 RecordSet _(unless dns:false or basePath is set)_
 
 > This plugin is designed to work in conjunction with the [_serverless-spa-deploy_](https://github.com/DanteInc/serverless-spa-deploy) plugin.
 
