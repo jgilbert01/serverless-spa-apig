@@ -147,8 +147,8 @@ Resources:
   SpaServerDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: ${self:custom.dns.endpoint, 'undefined'}
-      RegionalCertificateArn: ${self:custom.dns.acmCertificateArn, 'undefined'}
+      DomainName: ${self:custom.apig.domainName, 'undefined'}
+      RegionalCertificateArn: ${self:custom.apig.acmCertificateArn, 'undefined'}
       SecurityPolicy: TLS_1_2
       EndpointConfiguration:
         Types:
@@ -171,7 +171,7 @@ Resources:
       - SpaServerDomainName
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneId: ${self:custom.dns.hostedZoneId, 'undefined'}
+      HostedZoneId: ${self:custom.apig.hostedZoneId, 'undefined'}
       Name:
         Fn::Join:
           - ''
@@ -179,7 +179,7 @@ Resources:
             - .
       # Region: ${opt:region}
       # SetIdentifier: ${opt:region}
-      # HealthCheckId: ${self:custom.dns.${opt:region}.healthCheckId}
+      # HealthCheckId: ${self:custom.apig.${opt:region}.healthCheckId}
       Type: A
       AliasTarget:
         HostedZoneId:
@@ -211,8 +211,5 @@ Outputs:
     Value:
       Ref: SpaServer
 
-  # TODO apig endpoint
-  # https://SpaServerId.execute-api.us-east-1.amazonaws.com/test
-
   SpaURL:
-    Value: https://${self:custom.dns.endpoint, 'undefined'}
+    Value: https://${self:custom.apig.domainName, 'undefined'}

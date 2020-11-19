@@ -14,11 +14,8 @@ class Plugin {
 
   beforeCreateDeploymentArtifacts() {
     if (this.serverless.service.custom.apig === undefined) {
-      this.serverless.service.custom.apig = true;
+      this.serverless.service.custom.apig = false;
     }
-
-    const enabled = this.serverless.service.custom.apig;
-    if (enabled === false) return;
 
     const baseResources = this.serverless.service.provider.compiledCloudFormationTemplate;
 
@@ -39,14 +36,12 @@ class Plugin {
   }
 
   prepareResources(resources) {
-    if (!this.serverless.service.custom.dns) {
-      this.serverless.service.custom.dns = {};
-    }
-
     this.preparePartition(resources.Resources);
     this.prepareDeployment(resources.Resources);
     this.prepareWaf(resources.Resources);
     this.prepareDomainName(resources);
+    this.prepareRecordSet(resources.Resources);
+    this.prepareApiGateway(resources);
   }
 
   preparePartition(resources) {
@@ -75,6 +70,9 @@ class Plugin {
   }
 
   prepareDeployment(resources) {
+    const apig = this.serverless.service.custom.apig;
+    if (!apig) return;
+
     const instanceId = this.serverless.instanceId;
     const SpaServerDeployment = resources.SpaServerDeployment;
     delete resources.SpaServerDeployment;
@@ -83,24 +81,35 @@ class Plugin {
   }
 
   prepareDomainName(resources) {
-    const domainName = this.serverless.service.custom.dns.domainName;
-    const basePath = this.serverless.service.custom.dns.basePath;
-    const endpoint = this.serverless.service.custom.dns.endpoint;
+    const domainName = this.serverless.service.custom.apig.domainName;
 
-    if (basePath) {
-      resources.Resources.SpaServerBasePathMapping.Properties.DomainName = domainName;
-      resources.Resources.SpaServerBasePathMapping.Properties.BasePath = basePath;
-      resources.Resources.SpaServerBasePathMapping.DependsOn.pop();
-      resources.Outputs.SpaURL.Value = `https://${domainName}/${basePath}`
-    }
-
-    if (!endpoint) {
+    if (!domainName) {
       delete resources.Resources.SpaServerDomainName;
-      delete resources.Resources.SpaServerEndpointRecord
-      if (!basePath) {
-        delete resources.Resources.SpaServerBasePathMapping
-        delete resources.Outputs.SpaURL
-      }
+      delete resources.Resources.SpaServerEndpointRecord;
+      delete resources.Resources.SpaServerBasePathMapping;
+      delete resources.Outputs.SpaURL;
+    }
+  }
+
+  prepareRecordSet(resources) {
+    const hostedZoneId = this.serverless.service.custom.apig.hostedZoneId;
+
+    if (!hostedZoneId) {
+      delete resources.SpaServerEndpointRecord;
+    }
+  }
+
+  prepareApiGateway(resources) {
+    const apig = this.serverless.service.custom.apig;
+
+    if (!apig) {
+      delete resources.Resources.APIGatewayAWSProxyExecRole;
+      delete resources.Resources.SpaServer;
+      delete resources.Resources.SpaServerResource;
+      delete resources.Resources.SpaServerRootMethod;
+      delete resources.Resources.SpaServerProxyMethod;
+      delete resources.Resources.SpaServerDeployment;
+      delete resources.Outputs.SpaServerId;
     }
   }
 }

@@ -8,9 +8,11 @@ plugins:
   - serverless-spa-apig
 
 custom:
+  # partition: aws-us-gov
   spa:
     websiteBucketNameOutputRef: SpaBucketName
     # prefix: ${opt:stage}
+    acl: private
     files:
       - source: ./build
         globs: '**/*'
@@ -20,11 +22,9 @@ custom:
         globs: 'index.html'
         headers:
           CacheControl: max-age=300 # 5 minutes
-  # apig: # false
-  #   webACLId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  dns:
-    hostedZoneId: ZZZZZZZZZZZZZZZZZZZZ
-    domainName: example.com
-    endpoint: app.${self:custom.dns.domainName}
+  apig: # false
+    # hostedZoneId: ZZZZZZZZZZZZZZZZZZZZ
+    domainName: ${self:service}.example.com
     acmCertificateArn: arn:aws:acm:us-east-1:0123456789:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    # webACLId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
