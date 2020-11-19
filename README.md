@@ -20,6 +20,7 @@ plugins:
   - serverless-spa-apig
 
 custom:
+  # partition: aws-us-gov
   spa:
     websiteBucketNameOutputRef: SpaBucketName
     acl: private
