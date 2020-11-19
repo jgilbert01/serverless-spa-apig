@@ -43,8 +43,24 @@ class Plugin {
       this.serverless.service.custom.dns = {};
     }
 
+    this.preparePartition(resources.Resources);
     this.prepareDeployment(resources.Resources);
     this.prepareWaf(resources.Resources);
+    this.prepareDomainName(resources);
+  }
+
+  preparePartition(resources) {
+    const partition = this.serverless.service.custom.partition;
+
+    if (partition) {
+      const root = resources.SpaServerRootMethod.Properties.Integration.Uri['Fn::Join'][1][0].split(':');
+      root[1] = partition;
+      resources.SpaServerRootMethod.Properties.Integration.Uri['Fn::Join'][1][0] = root.join(':');
+
+      const proxy = resources.SpaServerProxyMethod.Properties.Integration.Uri['Fn::Join'][1][0].split(':');
+      proxy[1] = partition;
+      resources.SpaServerProxyMethod.Properties.Integration.Uri['Fn::Join'][1][0] = proxy.join(':');
+    }
   }
 
   prepareWaf(resources) {
@@ -64,6 +80,28 @@ class Plugin {
     delete resources.SpaServerDeployment;
     resources.SpaServerBasePathMapping.DependsOn[1] = `SpaServerDeployment${instanceId}`;
     resources[`SpaServerDeployment${instanceId}`] = SpaServerDeployment;
+  }
+
+  prepareDomainName(resources) {
+    const domainName = this.serverless.service.custom.dns.domainName;
+    const basePath = this.serverless.service.custom.dns.basePath;
+    const endpoint = this.serverless.service.custom.dns.endpoint;
+
+    if (basePath) {
+      resources.Resources.SpaServerBasePathMapping.Properties.DomainName = domainName;
+      resources.Resources.SpaServerBasePathMapping.Properties.BasePath = basePath;
+      resources.Resources.SpaServerBasePathMapping.DependsOn.pop();
+      resources.Outputs.SpaURL.Value = `https://${domainName}/${basePath}`
+    }
+
+    if (!endpoint) {
+      delete resources.Resources.SpaServerDomainName;
+      delete resources.Resources.SpaServerEndpointRecord
+      if (!basePath) {
+        delete resources.Resources.SpaServerBasePathMapping
+        delete resources.Outputs.SpaURL
+      }
+    }
   }
 }
 

@@ -8,7 +8,7 @@ Resources:
   APIGatewayAWSProxyExecRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ${self:service}-${opt:stage}-spa-s3-proxy
+      RoleName: ${self:service}-${opt:stage}-${opt:region}-spa-s3-proxy
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -145,7 +145,6 @@ Resources:
       WebACLId: ${self:custom.apig.webACLId, 'undefined'}
 
   SpaServerDomainName:
-    Condition: IncludeDns
     Type: AWS::ApiGateway::DomainName
     Properties:
       DomainName: ${self:custom.dns.endpoint, 'undefined'}
@@ -155,7 +154,6 @@ Resources:
         Types:
           - REGIONAL
   SpaServerBasePathMapping:
-    Condition: IncludeDns
     DependsOn:
       - SpaServer
       - ApiGatewayDeployment
@@ -169,7 +167,6 @@ Resources:
       Stage: ${opt:stage}
 
   SpaServerEndpointRecord:
-    Condition: IncludeDns
     DependsOn:
       - SpaServerDomainName
     Type: AWS::Route53::RecordSet
@@ -218,12 +215,4 @@ Outputs:
   # https://SpaServerId.execute-api.us-east-1.amazonaws.com/test
 
   SpaURL:
-    Condition: IncludeDns
     Value: https://${self:custom.dns.endpoint, 'undefined'}
-
-Conditions:
-  IncludeDns:
-    Fn::Not:
-      - Fn::Equals:
-        - ${self:custom.dns.endpoint, 'undefined'}
-        - false
