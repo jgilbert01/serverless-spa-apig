@@ -21,6 +21,7 @@ plugins:
 
 custom:
   spa:
+    websiteBucketNameOutputRef: SpaBucketName
     acl: private
     files: # per serverless-spa-deploy
       ...
