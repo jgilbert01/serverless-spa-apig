@@ -1,6 +1,6 @@
 {
   "name": "serverless-spa-apig",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Serverless plugin to configure S3, API Gateway and Route53 for a SPA or JAMStack site.",
   "author": "John Gilbert <john.gilbert@danteinc.com> (danteinc.com)",
   "license": "MIT",
