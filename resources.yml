@@ -37,7 +37,17 @@ Resources:
       Name: ${self:service}-${opt:stage}
       MinimumCompressionSize: 0
       EndpointConfiguration:
-        Types: [ REGIONAL ]
+        Types:
+          - REGIONAL
+        VpcEndpointIds:
+          - ${self:custom.apig.vpcEndpointId, 'undefined'}
+      Policy:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: execute-api:Invoke
+            Resource:
+              - execute-api:/*/*/*
       BinaryMediaTypes:
         - '*/*'
 
@@ -63,6 +73,7 @@ Resources:
         method.request.header.Cache-Control: false
         method.request.header.Content-Disposition: false
         method.request.header.Content-Type: false
+        method.request.header.ETag: false
       Integration:
         IntegrationHttpMethod: GET
         Type: AWS
@@ -79,18 +90,21 @@ Resources:
           integration.request.header.Cache-Control: method.request.header.Cache-Control
           integration.request.header.Content-Disposition: method.request.header.Content-Disposition
           integration.request.header.Content-Type: method.request.header.Content-Type
+          integration.request.header.ETag: method.request.header.ETag
         IntegrationResponses:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Cache-Control: integration.response.header.Cache-Control
               method.response.header.Content-Disposition: integration.response.header.Content-Disposition
               method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.ETag: integration.response.header.ETag
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
             method.response.header.Cache-Control: false
             method.response.header.Content-Disposition: false
             method.response.header.Content-Type: false
+            method.response.header.ETag: false
 
   SpaServerProxyMethod:
     Type: AWS::ApiGateway::Method
@@ -106,6 +120,7 @@ Resources:
         method.request.header.Cache-Control: false
         method.request.header.Content-Disposition: false
         method.request.header.Content-Type: false
+        method.request.header.ETag: false
       Integration:
         Credentials:
           Fn::GetAtt: [ APIGatewayAWSProxyExecRole, Arn ]
@@ -114,6 +129,7 @@ Resources:
           integration.request.header.Cache-Control: method.request.header.Cache-Control
           integration.request.header.Content-Disposition: method.request.header.Content-Disposition
           integration.request.header.Content-Type: method.request.header.Content-Type
+          integration.request.header.ETag: method.request.header.ETag
         IntegrationHttpMethod: GET
         Type: AWS
         Uri:
@@ -126,16 +142,26 @@ Resources:
         ContentHandling: CONVERT_TO_BINARY
         IntegrationResponses:
           - StatusCode: 200
+            SelectionPattern: '-'
             ResponseParameters:
               method.response.header.Cache-Control: integration.response.header.Cache-Control
               method.response.header.Content-Disposition: integration.response.header.Content-Disposition
               method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.ETag: integration.response.header.ETag
+          - StatusCode: 301
+            SelectionPattern: '404'
+            ResponseParameters:
+              method.response.header.Location: "'${self:custom.apig.redirect, '/${opt:stage}'}'"
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
             method.response.header.Cache-Control: false
             method.response.header.Content-Disposition: false
             method.response.header.Content-Type: false
+            method.response.header.ETag: false
+        - StatusCode: 301
+          ResponseParameters:
+            method.response.header.Location: true
 
   SpaServerWebACLAssociation:
     Type: AWS::WAFRegional::WebACLAssociation

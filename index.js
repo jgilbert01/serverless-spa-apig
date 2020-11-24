@@ -42,6 +42,7 @@ class Plugin {
     this.prepareDomainName(resources);
     this.prepareRecordSet(resources.Resources);
     this.prepareApiGateway(resources);
+    this.prepareVpcEndpoint(resources);
   }
 
   preparePartition(resources) {
@@ -110,6 +111,21 @@ class Plugin {
       delete resources.Resources.SpaServerProxyMethod;
       delete resources.Resources.SpaServerDeployment;
       delete resources.Outputs.SpaServerId;
+    }
+  }
+
+  prepareVpcEndpoint(resources) {
+    const vpcEndpointId = this.serverless.service.custom.apig.vpcEndpointId;
+    const policy = this.serverless.service.custom.apig.policy;
+
+    if (vpcEndpointId) {
+      resources.Resources.SpaServer.Properties.EndpointConfiguration.Types[0] = 'PRIVATE';
+      if (policy) {
+        resources.Resources.SpaServer.Properties.Policy = policy;
+      }
+    } else {
+      delete resources.Resources.SpaServer.Properties.EndpointConfiguration.VpcEndpointIds;
+      delete resources.Resources.SpaServer.Properties.Policy;
     }
   }
 }
