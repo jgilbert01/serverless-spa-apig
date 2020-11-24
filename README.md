@@ -32,4 +32,6 @@ custom:
     domainName: example.com
     acmCertificateArn: arn:aws:acm:us-east-1:0123456789:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     # webACLId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    # vpcEndpointId: xxxxxx
+    # policy:
 ```
